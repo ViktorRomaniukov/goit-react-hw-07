@@ -1,47 +1,14 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import * as contactsAPI from "./contactsAPI";
+import { createSlice } from "@reduxjs/toolkit";
+import { createSelector } from "@reduxjs/toolkit";
+import { selectNameFilter } from "./filtersSlice";
+import { fetchContacts, addContact, deleteContact } from "./contactsOps";
+
 
 const initialState = {
   items: [],
   loading: false,
   error: null,
 };
-
- export const fetchContacts = createAsyncThunk(
-  "contacts/fetchAll",
-  async (_, thunkAPI) => {
-    try {
-      const data = await contactsAPI.fetchContacts();
-      return data;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
-
-export const addContact = createAsyncThunk(
-  "contacts/addContact",
-  async (contact, thunkAPI) => {
-    try {
-      const data = await contactsAPI.addContact(contact);
-      return data;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
-
-  export const deleteContact = createAsyncThunk(
-  "contacts/deleteContact",
-  async (id, thunkAPI) => {
-    try {
-      await contactsAPI.deleteContact(id);
-      return id;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
 
 const contactsSlice = createSlice({
   name: "contacts",
@@ -79,7 +46,9 @@ const contactsSlice = createSlice({
       })
       .addCase(deleteContact.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = state.items.filter((contact) => contact.id !== action.payload);
+        state.items = state.items.filter(
+          (contact) => contact.id !== action.payload
+        );
       })
       .addCase(deleteContact.rejected, (state, action) => {
         state.loading = false;
@@ -87,5 +56,17 @@ const contactsSlice = createSlice({
       });
   },
 });
+
+export const selectContacts = (state) => state.contacts.items;
+export const selectLoading = (state) => state.contacts.loading;
+export const selectError = (state) => state.contacts.error;
+export const selectFilteredContacts = createSelector(
+  [selectContacts, selectNameFilter],
+  (contacts, filter) => {
+    return contacts.filter((contact) =>
+      contact.name.toLowerCase().includes(filter.toLowerCase())
+    );
+  }
+);
 
 export default contactsSlice.reducer;
